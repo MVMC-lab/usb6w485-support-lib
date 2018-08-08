@@ -1,0 +1,8 @@
+// the configured option and setting for 6W485_LIB library
+
+#define VERSION_MAJOR @USB6W485lib_VERSION_MAJOR@
+#define VERSION_MINOR @USB6W485lib_VERSION_MINOR@
+
+#cmakedefine USE_VCP
+
+#cmakedefine USE_DEBUG_MSG
