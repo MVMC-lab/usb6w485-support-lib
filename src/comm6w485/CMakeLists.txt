@@ -7,13 +7,30 @@ include (${CMAKE_ROOT}/Modules/CheckFunctionExists.cmake)
 # Check for system, is provide ASA485_init function
 check_function_exists (Comm6W485_init HAVE_COMM_INIT)
 
+set(BOOST_USE_STATIC_LIBS ON)
+set(Boost_USE_MULTITHREADED ON)
+set(Boost_USE_STATIC_RUNTIME OFF)
+set(Boost_DEBUG ON)
+
+if(WIN32)
+  add_definitions(-DBOOST_ALL_NO_LIB=1)
+  add_definitions(${Boost_LIB_DIAGNOSTIC_DEFINITIONS})
+endif()
+
+find_package(Boost 1.67 COMPONENTS thread system REQUIRED)
+
 add_library(${PROJECT_NAME}
 	src/comm6w485.cpp
+    src/irqmanager.cpp
+    src/irqhandle.cpp
+    src/irqexception.cpp
 )
 
+message("Comm6W485 link : ${Boost_LIBRARIES}")
 target_link_libraries(${PROJECT_NAME}
 	HidAPI
     serial
+    ${Boost_LIBRARIES}
 )
 
 add_dependencies(${PROJECT_NAME} HidAPI)
@@ -23,11 +40,12 @@ set(LIBS HidAPI)
 # Define headers for this library. PUBLIC headers are used for
 # compiling the library, and will be added to consumers' build
 # paths.
-message("ASA485 include : ${serial_INCLUDE_DIRS} ${ASAComm_INCLUDE_DIRS}")
+message("Comm6W485 include : ${serial_INCLUDE_DIRS} ${ASAComm_INCLUDE_DIRS}")
 target_include_directories(${PROJECT_NAME} PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<BUILD_INTERFACE:${HidAPI_INCLUDE_DIRS}>
     $<BUILD_INTERFACE:${serial_INCLUDE_DIRS}>
+    $<BUILD_INTERFACE:${Boost_INCLUDE_DIRS}>
     $<INSTALL_INTERFACE:include>
     PRIVATE src)
 
@@ -61,7 +79,7 @@ export(TARGETS ${PROJECT_NAME} FILE "${PROJECT_NAME}Config.cmake")
 
 include_directories(
 	${HidAPI_INCLUDE_DIRS}
-	${serial_INCLUDE_DIRS}
+    ${serial_INCLUDE_DIRS}
 )
 
 
@@ -73,12 +91,14 @@ add_executable(Comm6W485_libtest
 
 target_link_libraries(Comm6W485_libtest 
 	${PROJECT_NAME}
+	${Boost_LIBS}
 )
 
 target_include_directories(${PROJECT_NAME} PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
 	$<BUILD_INTERFACE:${HidAPI_INCLUDE_DIRS}>
-	$<BUILD_INTERFACE:${serial_INCLUDE_DIRS}>
+    $<BUILD_INTERFACE:${serial_INCLUDE_DIRS}>
+    $<BUILD_INTERFACE:${Boost_INCLUDE_DIRS}>
     $<INSTALL_INTERFACE:include>
     PRIVATE src)
 

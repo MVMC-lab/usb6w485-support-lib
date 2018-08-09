@@ -2,47 +2,66 @@
 #define _H_COMM6W485
 
 #include "serial/serial.h"
+#include "hidapi.h"
+#include "irqmanager.hpp"
 #include <vector>
+#include "commif.hpp"
 
-class Comm6W485
+class Comm6W485 : public CommInterface, IRQInterface
 {
-  public:
-    Comm6W485();
-    ~Comm6W485();
+public:
+	enum class InterfaceType
+	{
+		INTERFACE_CDC,
+		INTERFACE_HID,
+	};
+public:
+  Comm6W485();
+  ~Comm6W485();
 
-    /* Control method */
-    bool connect();
-    bool isConnect();
+  /* Control method */
+  bool connect();
+  bool isConnect();
 
-    /* read and write method */
-    size_t writeMultiBytes(std::vector<uint8_t> &data);
-    bool writeByte(uint8_t data);
+  /* read and write method */
 
-    std::vector<uint8_t> readMultiBytes(size_t count);
-    uint8_t readByte();
+  // Serial I/O method
+  size_t writeMultiBytes(std::vector<uint8_t> &data);
+  bool writeByte(uint8_t data);
 
-    /* Configure method */
-    std::string getPort();
-    bool setPort(std::string port);
+  std::vector<uint8_t> readMultiBytes(size_t count);
+  uint8_t readByte();
 
-    bool setBaudrate(unsigned int baudrate);
-    unsigned int getBaudrate();
+  // HID I/O method
+  bool getISR();
+  void sendIRQ();
 
-    bool setTimeout(unsigned int timeout_ms);
-    unsigned int getTimeout();
+  /* Configure method */
+  std::string getPort();
+  bool setPort(std::string port);
 
-    std::vector<std::string> getDeviceList();
+  bool setBaudrate(unsigned int baudrate);
+  unsigned int getBaudrate();
 
-  protected:
-    serial::Serial m_serial;
+  bool setTimeout(unsigned int timeout_ms);
+  unsigned int getTimeout();
 
-  private:
-    unsigned int m_baudrate;
-    std::string m_port;
-    unsigned int m_timeout;
+  std::vector<std::string> getDeviceList(InterfaceType type);
 
-    // IO buffer
-    std::vector<uint8_t> _buffer;
+protected:
+  serial::Serial m_serial;
+  hid_device* m_hid;
+
+private:
+  unsigned int m_baudrate;
+  std::string m_port;
+  unsigned int m_timeout;
+
+  // IO buffer
+  std::vector<uint8_t> _buffer;
+
+  // IRQ manager
+  IRQManager m_irqmanager;
 };
 
 #endif // !_H_COMM6W485

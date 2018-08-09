@@ -6,9 +6,20 @@ int main(int argc, char const *argv[])
 {
     Comm6W485 comm;
 
-    vector<string> list = comm.getDeviceList();
-
     int count(0);
+
+    cout << " ---- HID Device list ---- " << endl;
+    vector<string> hid_list = comm.getDeviceList(Comm6W485::InterfaceType::INTERFACE_HID);
+
+    count = (0);
+    for (string info : hid_list ) {
+        cout << "[" << count++ << "]: " << info << endl;
+    }
+
+    cout << endl << " ---- Serial Port list ---- " << endl;
+    vector<string> list = comm.getDeviceList(Comm6W485::InterfaceType::INTERFACE_CDC);
+
+    count = (0);
     for (string info : list)
     {
         cout << "[" << count++ << "]: " << info << endl;
@@ -31,6 +42,7 @@ int main(int argc, char const *argv[])
         cout << c;
     }
     cout << endl;
+
 
     system("pause");
     return 0;
