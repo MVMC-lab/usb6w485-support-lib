@@ -7,7 +7,10 @@
 #include <vector>
 #include "commif.hpp"
 
-class Comm6W485 : public CommInterface, IRQInterface
+#include <boost/shared_ptr.hpp>
+#include <boost/thread/mutex.hpp>
+
+class Comm6W485 : public CommInterface, public IRQInterface
 {
 public:
 	enum class InterfaceType
@@ -40,6 +43,11 @@ public:
   std::string getPort();
   bool setPort(std::string port);
 
+  boost::shared_ptr<wchar_t[]> getSerialcode();
+  bool setSerialcode(int index);
+  
+
+
   bool setBaudrate(unsigned int baudrate);
   unsigned int getBaudrate();
 
@@ -48,13 +56,23 @@ public:
 
   std::vector<std::string> getDeviceList(InterfaceType type);
 
+  IRQManager& getIRQManger();
+
+protected:
+  bool updateDeviceList(InterfaceType type);
+
 protected:
   serial::Serial m_serial;
   hid_device* m_hid;
 
+  std::vector<std::string> m_serial_port_list;
+  std::vector<boost::shared_ptr<wchar_t[]>> m_hid_dev_list;
+
+
 private:
   unsigned int m_baudrate;
   std::string m_port;
+  boost::shared_ptr<wchar_t[]> m_target_hid_dev;
   unsigned int m_timeout;
 
   // IO buffer
@@ -62,6 +80,9 @@ private:
 
   // IRQ manager
   IRQManager m_irqmanager;
+
+  // Resource mutex
+  boost::mutex m_mutex;
 };
 
 #endif // !_H_COMM6W485

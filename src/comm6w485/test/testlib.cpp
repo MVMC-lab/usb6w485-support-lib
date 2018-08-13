@@ -1,11 +1,39 @@
 #include <iostream>
 #include "comm6w485.hpp"
+#ifdef WIN32
+#include <Windows.h>
+#endif
+
+#include <boost/thread.hpp>
+#include <boost/property_tree/ptree.hpp>
+#include <boost/property_tree/xml_parser.hpp>
+
 using namespace std;
 
-int main(int argc, char const *argv[])
-{
-    Comm6W485 comm;
+Comm6W485 comm_mst;
+Comm6W485 comm_slv;
 
+
+void isr_thread(IRQManager& manager) {
+    while(true) {
+        manager.spinOnce();
+        boost::this_thread::sleep_for(boost::chrono::milliseconds(10));
+    }
+}
+
+void irq_thread(IRQManager &manager)
+{
+    while (true)
+    {
+        manager.spinOnce();
+        boost::this_thread::sleep_for(boost::chrono::milliseconds(10));
+    }
+}
+
+void slave_rsp_cb(CommInterface *comm);
+
+void select_device(Comm6W485 &comm)
+{
     int count(0);
 
     cout << " ---- HID Device list ---- " << endl;
@@ -15,6 +43,10 @@ int main(int argc, char const *argv[])
     for (string info : hid_list ) {
         cout << "[" << count++ << "]: " << info << endl;
     }
+    cout << "Select Dev : [0 ~ " << hid_list.size() - 1 << "] " << endl;
+    int dev_select;
+    cin >> dev_select;
+    comm.setSerialcode(dev_select);
 
     cout << endl << " ---- Serial Port list ---- " << endl;
     vector<string> list = comm.getDeviceList(Comm6W485::InterfaceType::INTERFACE_CDC);
@@ -30,20 +62,106 @@ int main(int argc, char const *argv[])
     cin >> select;
     comm.setBaudrate(38400);
     comm.setPort(list[select]);
-    comm.setTimeout(10000);
+    comm.setTimeout(10);
+}
 
-    if (comm.connect())
+namespace pt = boost::property_tree;
+
+int main(int argc, char const *argv[])
+{
+
+    // Select master Device
+    select_device(comm_mst);
+
+    // Select slave Device
+    select_device(comm_slv);
+
+    if (comm_mst.connect())
     {
-        cout << "connect " << list[select] << " successful! " << endl;
+        cout << "  ---- Master connect ----" << endl;
+        cout << "connect " << comm_mst.getPort() << " successful! " << endl;
+        cout << "connect ";
+        wcout << comm_mst.getSerialcode();
+        cout << " successful! " << endl;
     }
 
-    for (uint8_t c : comm.readMultiBytes(100))
-    {
-        cout << c;
+    if (comm_slv.connect()) {
+        cout << "  ---- Slave connect ----" << endl;
+        cout << "connect " << comm_slv.getPort() << " successful! " << endl;
+        cout << "connect ";
+        wcout << comm_slv.getSerialcode();
+        cout << " successful! " << endl;
     }
-    cout << endl;
+
+    // for (uint8_t c : comm.readMultiBytes(100))
+    // {
+    //     cout << c;
+    // }
+    // cout << endl;
+
+    IRQManager manager_mst = comm_mst.getIRQManger();
+    IRQManager manager_slv = comm_slv.getIRQManger();
+
+    IRQHandle irq1(0);
+
+    irq1.registerCallback(
+        [](CommInterface *comm) {
+            vector<uint8_t> test_message;
+            test_message.push_back('t');
+            test_message.push_back('e');
+            test_message.push_back('s');
+            test_message.push_back('t');
+            test_message.push_back('\r');
+            test_message.push_back('\n');
+            comm->writeMultiBytes(test_message);
+            cout << "irq1 call!" << endl;
+        });
+
+    IRQHandle irq2(3);
+
+    irq2.registerCallback( slave_rsp_cb);
+
+    manager_slv.registerIRQHandle(irq1);
+    manager_slv.registerIRQHandle(irq2);
+
+    IRQHandle irq_response(0);
+    irq_response.registerCallback(
+        [](CommInterface *comm) {
+            cout << "Master ISR called!" << endl;
+            cout << "Data in ------" << endl;
+            for(int i=0; i<10; i++) {
+                char input = comm->readByte();
+                if(input == '\n') {
+                    cout << endl;
+                    break;
+                }
+                cout << input;
+            }
+            cout << "------------" << endl;
+            
+        });
+
+    manager_mst.registerIRQHandle(irq_response);
+
+    boost::thread th_isr(isr_thread, manager_mst);
+    boost::thread th_irq(irq_thread, manager_slv);
+
+    // Execute IRQ sending test
+    for (int i = 0; i < 100; i++)
+    {
+        comm_mst.sendIRQ();
+        boost::this_thread::sleep(boost::chrono::milliseconds(100));
+        
+    }
+
 
 
     system("pause");
     return 0;
+}
+
+void slave_rsp_cb(CommInterface *comm)
+{
+    cout << "ISR get and Send IRQl!" << endl;
+    comm_slv.sendIRQ();
 }

@@ -14,6 +14,11 @@ if(WIN32)
         src/hid_win32.c
     )
     target_link_libraries(${PROJECT_NAME} ${WINHID_LIBRARIES})
+
+    if(MINGW)
+    # TODO: Add mingw32 support
+    endif()
+
 endif(WIN32)
 
 if(UNIX)
