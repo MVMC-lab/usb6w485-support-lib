@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<package>
+  <name>Comm6W485</name>
+  <version>0.0.1</version>
+  <description>
+    usb6w485_support_lib is a cross-platform, simple to use library for using usb6w485 module on computers.  
+    This library provides a C++, object oriented interface for interacting with usb6w485 modules on Linux and Windows.
+  </description>
+
+  <maintainer email="taiwanet@g.ncu.edu.tw">TwnET</maintainer>
+
+  <license>MIT</license>
+
+  <url type="website">http://www.twnapp.com/</url>
+  <url type="repository">https://github.com/MVMC-lab/usb6w485-support-lib</url>
+  <url type="bugtracker">https://github.com/MVMC-lab/usb6w485-support-lib/issues</url>
+
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <test_depend>boost</test_depend>
+
+</package>

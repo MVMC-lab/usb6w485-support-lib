@@ -5,10 +5,10 @@
 
 class CommInterface {
 public:
-	virtual size_t writeMultiBytes(std::vector<uint8_t> &data) = 0;
+	virtual std::size_t writeMultiBytes(std::vector<uint8_t> &data) = 0;
 	virtual bool writeByte(uint8_t data) = 0;
 
-	virtual std::vector<uint8_t> readMultiBytes(size_t count) = 0;
+	virtual std::vector<uint8_t> readMultiBytes(std::size_t count) = 0;
 	virtual uint8_t readByte() = 0;
 };
 

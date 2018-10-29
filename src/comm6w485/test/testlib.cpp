@@ -17,7 +17,7 @@ Comm6W485 comm_slv;
 void isr_thread(IRQManager& manager) {
     while(true) {
         manager.spinOnce();
-        boost::this_thread::sleep_for(boost::chrono::milliseconds(10));
+        //boost::this_thread::sleep_for(boost::chrono::milliseconds(10));
     }
 }
 
@@ -26,10 +26,10 @@ void irq_thread(IRQManager &manager)
     while (true)
     {
         manager.spinOnce();
-        boost::this_thread::sleep_for(boost::chrono::milliseconds(10));
+        //boost::this_thread::sleep_for(boost::chrono::milliseconds(10));
     }
 }
-
+vector<boost::chrono::high_resolution_clock::time_point> time_stamp;
 void slave_rsp_cb(CommInterface *comm);
 
 void select_device(Comm6W485 &comm)
@@ -150,13 +150,15 @@ int main(int argc, char const *argv[])
     for (int i = 0; i < 100; i++)
     {
         comm_mst.sendIRQ();
-        boost::this_thread::sleep(boost::chrono::milliseconds(100));
-        
+        cout << "Count: " << i+1 << endl;
+        boost::this_thread::sleep_for(boost::chrono::milliseconds(99));
     }
 
+    for(int i=1; i < time_stamp.size(); i++) {
+        boost::chrono::nanoseconds ns = boost::chrono::duration_cast<boost::chrono::nanoseconds> (time_stamp.at(i) - time_stamp.at(i-1));
+        cout << "Time stamp: " <<  ns.count() / 1000000.0 << endl;
+    }
 
-
-    system("pause");
     return 0;
 }
 
@@ -164,4 +166,5 @@ void slave_rsp_cb(CommInterface *comm)
 {
     cout << "ISR get and Send IRQl!" << endl;
     comm_slv.sendIRQ();
+    time_stamp.push_back(boost::chrono::high_resolution_clock::now());
 }

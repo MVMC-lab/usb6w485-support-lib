@@ -22,12 +22,21 @@ if(WIN32)
 endif(WIN32)
 
 if(UNIX)
+    find_package(catkin REQUIRED)
+    catkin_package(
+        LIBRARIES ${PROJECT_NAME}
+        INCLUDE_DIRS include
+        DEPENDS rt pthread
+    )
     find_package(LibUSB)
-    if( LibUSB_FOUND)
+    if( LIBUSB_FOUND)
         message("Usb HIDAPI Library with Linux libusb platform")
         add_library(${PROJECT_NAME}
             src/hid_linux_libusb.c
         )
+        target_link_libraries(${PROJECT_NAME} ${LIBUSB_LIBRARY})
+        message("Usb HIDAPI LINK: " ${LIBUSB_LIBRARY})
+        include_directories(${LIBUSB_INCLUDE_DIR})
     else()
         message("Usb HIDAPI Library with Linux platform")
         add_library(${PROJECT_NAME}
@@ -50,14 +59,30 @@ target_compile_features(${PROJECT_NAME}
     PUBLIC cxx_auto_type
     PRIVATE cxx_variadic_templates)
 
-# 'make install' to the correct locations (provided by GNUInstallDirs).
-install(TARGETS ${PROJECT_NAME}
-  EXPORT "${PROJECT_NAME}Config"
-  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})  # This is for Windows
+if(UNIX)
+    # 'make install' to the correct locations (provided by GNUInstallDirs).
+    install(TARGETS ${PROJECT_NAME}
+    EXPORT "${PROJECT_NAME}Config"
+    ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+    LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+    RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})  # This is for Linux with ROS
 
-install(DIRECTORY include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+    install(DIRECTORY include/
+    DESTINATION ${CATKIN_GLOBAL_INCLUDE_DESTINATION}
+    PATTERN ".svn" EXCLUDE
+    )
+else(UNIX)
+    # 'make install' to the correct locations (provided by GNUInstallDirs).
+    install(TARGETS ${PROJECT_NAME}
+    EXPORT "${PROJECT_NAME}Config"
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})  # This is for Windows
+
+    install(DIRECTORY include/ 
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+    )
+endif(UNIX)
 
 # This makes the project importable from the install directory
 # Put config file in per-project dir (name MUST match), can also

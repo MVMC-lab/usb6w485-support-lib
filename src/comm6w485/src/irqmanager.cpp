@@ -37,14 +37,14 @@ void IRQManager::spinOnce()
 	}
 }
 
-IRQHandle& IRQManager::findIRQHandle(int id)
+boost::optional<IRQHandle> IRQManager::findIRQHandle(int id)
 {
 	for (IRQHandle &handle : m_IRQHandles)
 	{
 		if (handle.getID() == id)
 			return handle;
 	}
-	return IRQHandle();
+	return boost::optional<IRQHandle>{};
 }
 
 size_t IRQManager::getCount()

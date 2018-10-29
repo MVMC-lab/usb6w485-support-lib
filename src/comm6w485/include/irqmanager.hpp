@@ -5,6 +5,7 @@
 
 #include "irqhandle.hpp"
 #include "commif.hpp"
+#include <boost/optional.hpp>
 
 
 using namespace std;
@@ -20,7 +21,7 @@ public:
 
 	void spinOnce();
 
-	IRQHandle& findIRQHandle(int id);
+	boost::optional<IRQHandle> findIRQHandle(int id);
 
 	size_t getCount();
 

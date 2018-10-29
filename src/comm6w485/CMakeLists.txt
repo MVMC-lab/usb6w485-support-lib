@@ -12,12 +12,29 @@ set(Boost_USE_MULTITHREADED ON)
 set(Boost_USE_STATIC_RUNTIME OFF)
 set(Boost_DEBUG ON)
 
+if(UNIX AND NOT APPLE)
+# Find catkin
+find_package(catkin REQUIRED)
+endif()
+
 if(WIN32)
   add_definitions(-DBOOST_ALL_NO_LIB=1)
   add_definitions(${Boost_LIB_DIAGNOSTIC_DEFINITIONS})
 endif()
 
-find_package(Boost 1.67 COMPONENTS thread system REQUIRED)
+if(UNIX AND NOT APPLE)
+    # If Linux, add rt and pthread
+    set(rt_LIBRARIES rt)
+    set(pthread_LIBRARIES pthread)
+    catkin_package(
+        LIBRARIES ${PROJECT_NAME}
+        INCLUDE_DIRS include
+        DEPENDS rt pthread
+    )
+endif()
+
+
+find_package(Boost 1.58 COMPONENTS thread system REQUIRED)
 
 add_library(${PROJECT_NAME}
 	src/comm6w485.cpp
@@ -33,7 +50,7 @@ target_link_libraries(${PROJECT_NAME}
     ${Boost_LIBRARIES}
 )
 
-add_dependencies(${PROJECT_NAME} HidAPI)
+add_dependencies(${PROJECT_NAME} HidAPI serial)
 
 set(LIBS HidAPI)
 
@@ -55,14 +72,34 @@ target_compile_features(${PROJECT_NAME}
     PUBLIC cxx_auto_type
     PRIVATE cxx_variadic_templates)
 
-# 'make install' to the correct locations (provided by GNUInstallDirs).
-install(TARGETS ${PROJECT_NAME}
-  EXPORT "${PROJECT_NAME}Config"
-  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})  # This is for Windows
 
-install(DIRECTORY include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+if(UNIX)
+    # 'make install' to the correct locations (provided by GNUInstallDirs).
+    install(TARGETS ${PROJECT_NAME}
+    EXPORT "${PROJECT_NAME}Config"
+    ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+    LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+    RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})  # This is for Linux with ROS
+
+    install(DIRECTORY include/
+    DESTINATION ${CATKIN_GLOBAL_INCLUDE_DESTINATION}
+    PATTERN ".svn" EXCLUDE
+    )
+else(UNIX)
+    # 'make install' to the correct locations (provided by GNUInstallDirs).
+    install(TARGETS ${PROJECT_NAME}
+    EXPORT "${PROJECT_NAME}Config"
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})  # This is for Windows
+
+    install(DIRECTORY include/ 
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+    )
+endif(UNIX)
+
+
+
 
 # This makes the project importable from the install directory
 # Put config file in per-project dir (name MUST match), can also
@@ -107,4 +144,3 @@ add_test (Comm6W485_libtest Comm6W485_libtest )
 
 # add the install targets
 install (TARGETS Comm6W485_libtest DESTINATION "test")
-

@@ -9,8 +9,7 @@
 #include <boost/thread.hpp>
 #include <boost/format.hpp>
 #include <boost/shared_ptr.hpp>
-
-#include <comdef.h>
+#include <boost/locale.hpp>
 
 Comm6W485::Comm6W485() : m_serial(),
                          m_hid(nullptr),
@@ -195,14 +194,21 @@ std::vector<std::string> Comm6W485::getDeviceList(Comm6W485::InterfaceType type)
         while (cur_dev)
         {
             boost::format fmt("%s  %s, %04hx %04hx, %ls, path:%s");
-            _bstr_t manufacturer_string(cur_dev->manufacturer_string);
-            fmt % manufacturer_string;
-            _bstr_t product_string(cur_dev->product_string);
-            fmt % product_string;
+            //_bstr_t manufacturer_string(cur_dev->manufacturer_string);
+            string w_manufacturer_string = boost::locale::conv::utf_to_utf<char>(cur_dev->manufacturer_string);
+            //fmt % manufacturer_string;
+            fmt % w_manufacturer_string;
+            
+            //_bstr_t product_string(cur_dev->product_string);
+            string w_product_string = boost::locale::conv::utf_to_utf<char>(cur_dev->product_string);
+            //fmt % product_string;
+            fmt % w_product_string;
             fmt % cur_dev->vendor_id;
             fmt % cur_dev->product_id;
-            _bstr_t serial_number(cur_dev->serial_number);
-            fmt % serial_number;
+            //_bstr_t serial_number(cur_dev->serial_number);
+            string w_serial_number = boost::locale::conv::utf_to_utf<char>(cur_dev->serial_number);
+            //fmt % serial_number;
+            fmt % w_serial_number;
             fmt % cur_dev->path;
 
             list_port.push_back(fmt.str());
